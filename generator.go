@@ -1,0 +1,3 @@
+package openapi
+
+func Generate() {}
