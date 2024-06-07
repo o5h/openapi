@@ -8,15 +8,15 @@ type Format string
 type Type string
 
 const (
-	MethodGet     = Method("GET")
-	MethodHead    = Method("HEAD")
-	MethodPost    = Method("POST")
-	MethodPut     = Method("PUT")
-	MethodPatch   = Method("PATCH")
-	MethodDelete  = Method("DELETE")
-	MethodConnect = Method("CONNECT")
-	MethodOptions = Method("OPTIONS")
-	MethodTrace   = Method("TRACE")
+	MethodGet     = Method("get")
+	MethodHead    = Method("head")
+	MethodPost    = Method("post")
+	MethodPut     = Method("put")
+	MethodPatch   = Method("patch")
+	MethodDelete  = Method("delete")
+	MethodConnect = Method("connect")
+	MethodOptions = Method("options")
+	MethodTrace   = Method("trace")
 
 	TypeInteger = Type("integer")
 	TypeArray   = Type("array")
@@ -66,11 +66,8 @@ type License struct {
 	Identifier string `yaml:"identifier,omitempty"`
 	URL        string `yaml:"url,omitempty"`
 }
-type Paths map[string]*PathItem
-type PathItem struct {
-	Get  *Operation `yaml:"get,omitempty"`
-	Post *Operation `yaml:"post,omitempty"`
-}
+type Paths map[string]PathItem
+type PathItem map[string]*Operation
 
 type Operation struct {
 	Summary     string           `yaml:"summary,omitempty"`

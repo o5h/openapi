@@ -8,7 +8,7 @@ import (
 )
 
 func TestPetStore(t *testing.T) {
-	spec, err := spec.Load("testdata/examples/v3.0/petstore.yaml")
+	spec, err := spec.Load("../testdata/examples/v3.0/petstore.yaml")
 
 	assert.Nil(t, err)
 	assert.NotNil(t, spec)
@@ -18,13 +18,13 @@ func TestPetStore(t *testing.T) {
 	assert.Eq(t, spec.Info.License.Name, "MIT")
 
 	pets := spec.Paths["/pets"]
-	assert.Eq(t, pets.Get.OperationId, "listPets")
+	assert.Eq(t, pets["get"].OperationId, "listPets")
 	t.Log(spec)
 
 }
 
 func TestUspto(t *testing.T) {
-	spec, err := spec.Load("testdata/examples/v3.0/uspto.yaml")
+	spec, err := spec.Load("../testdata/examples/v3.0/uspto.yaml")
 
 	assert.Nil(t, err)
 	assert.NotNil(t, spec)
@@ -37,6 +37,6 @@ func TestUspto(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotNil(t, root)
 
-	assert.Eq(t, root.Get.OperationId, "list-data-sets")
+	assert.Eq(t, root["get"].OperationId, "list-data-sets")
 	t.Log(spec)
 }
