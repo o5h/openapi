@@ -21,7 +21,7 @@ paths:
           schema:
             type: integer
             maximum: 100
-            format: int32
+            format:  int32
       responses:
         '200':
           description: A paged array of pets
