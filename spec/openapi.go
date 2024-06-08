@@ -1,10 +1,13 @@
 package spec
 
-import "gopkg.in/yaml.v3"
+import (
+	"fmt"
+
+	"gopkg.in/yaml.v3"
+)
 
 type Method string
 type In string
-type Format string
 type Type string
 
 const (
@@ -26,9 +29,6 @@ const (
 	InHeader = In("header")
 	InPath   = In("path")
 	InCookie = In("cookie")
-
-	FormatInt32 = Format("int32")
-	FormatInt64 = Format("int64")
 )
 
 type OpenAPI struct {
@@ -52,8 +52,8 @@ type ServerVariable struct {
 }
 
 type Components struct {
-	Schemas         map[string]Schema `yaml:"schemas"`
-	SecuritySchemes map[string]any    `yaml:"securitySchemes"`
+	Schemas         NamedSchemas   `yaml:"schemas"`
+	SecuritySchemes map[string]any `yaml:"securitySchemes"`
 }
 
 type Info struct {
@@ -116,15 +116,38 @@ type Content struct {
 }
 
 type Schema struct {
-	Type       string         `yaml:"type"`
-	Minimum    *int64         `yaml:"minimum,omitempty"`
-	Maximum    *int64         `yaml:"maximum,omitempty"`
-	MaxItems   *int64         `yaml:"maxItems,omitempty"`
-	Items      Ref[Schema]    `yaml:"items,omitempty"`
-	Format     Format         `yaml:"format,omitempty"`
-	Required   []string       `yaml:"required,omitempty"`
-	Properties map[string]any `yaml:"properties"`
-	Example    any            `yaml:"example"`
+	Type       string       `yaml:"type"`
+	Minimum    *int64       `yaml:"minimum,omitempty"`
+	Maximum    *int64       `yaml:"maximum,omitempty"`
+	MaxItems   *int64       `yaml:"maxItems,omitempty"`
+	Items      Ref[Schema]  `yaml:"items,omitempty"`
+	Format     string       `yaml:"format,omitempty"`
+	Required   []string     `yaml:"required,omitempty"`
+	Properties NamedSchemas `yaml:"properties"`
+	Example    any          `yaml:"example"`
+}
+
+type NamedSchema struct {
+	Schema
+	Name string
+}
+type NamedSchemas []NamedSchema
+
+func (shema *NamedSchemas) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.MappingNode {
+		return fmt.Errorf("`commands` must contain YAML mapping, has %v", node.Kind)
+	}
+	*shema = make([]NamedSchema, len(node.Content)/2)
+	for i := 0; i < len(node.Content); i += 2 {
+		var res = &(*shema)[i/2]
+		if err := node.Content[i].Decode(&res.Name); err != nil {
+			return err
+		}
+		if err := node.Content[i+1].Decode(&res.Schema); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type Reference struct {

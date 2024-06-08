@@ -44,6 +44,8 @@ func (g *generator) loadOpenAPI() error {
 func (g *generator) generateAPI() (err error) {
 	g.api = &API{}
 	g.definePackageName()
+	g.defineAPIName()
+	g.generateModel()
 	return
 }
 
@@ -82,6 +84,69 @@ func (g *generator) definePackageName() {
 		return
 	}
 	g.api.Package = "api"
+}
+
+func (g *generator) defineAPIName() {
+	g.api.APIName = toPascalCase(g.api.Package)
+}
+
+func (g *generator) generateModel() {
+	g.convertComponentsToTypeDefs()
+}
+
+func (g *generator) convertComponentsToTypeDefs() {
+	for _, schema := range g.openapi.Components.Schemas {
+		switch schema.Type {
+		case "object":
+			g.defineObject(schema.Name, &schema.Schema)
+		case "array":
+			g.defineArray(schema.Name, &schema.Schema)
+		default:
+			panic("Unsupported schema type " + schema.Type)
+		}
+	}
+}
+
+func isRequired(schema *spec.Schema, name string) bool {
+	for _, n := range schema.Required {
+		if n == name {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *generator) defineObject(name string, schema *spec.Schema) {
+	typedef := TypeDef{Name: toPascalCase(name)}
+	for _, prop := range schema.Properties {
+		field := Field{
+			Name:     toPascalCase(prop.Name),
+			Required: isRequired(schema, name),
+		}
+		field.Type = g.resolvePropertyType(&prop.Schema)
+		typedef.Fields = append(typedef.Fields, field)
+	}
+	g.api.TypesDefs = append(g.api.TypesDefs, typedef)
+}
+
+func (g *generator) resolvePropertyType(schema *spec.Schema) string {
+	//TODO: $ref support
+	typeFormat := TypeFormat{Type: schema.Type, Format: schema.Format}
+	if targetType, ok := g.cfg.TypeMap[typeFormat]; ok {
+		return targetType
+	}
+	return schema.Type
+}
+
+func (g *generator) defineArray(name string, schema *spec.Schema) {
+	def := TypeDef{
+		Type: ArrayType,
+		Name: toPascalCase(name),
+	}
+	if schema.Items.Reference != nil {
+		//TODO: resolve item type ref
+	}
+	g.api.TypesDefs = append(g.api.TypesDefs, def)
 }
 
 func (g *generator) findFirstTag() string {

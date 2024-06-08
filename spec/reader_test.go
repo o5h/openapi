@@ -19,6 +19,8 @@ func TestPetStore(t *testing.T) {
 
 	pets := spec.Paths["/pets"]
 	assert.Eq(t, pets["get"].OperationId, "listPets")
+	assert.Eq(t, spec.Components.Schemas[0].Name, "Pet")
+	assert.Eq(t, spec.Components.Schemas[1].Name, "Pets")
 	t.Log(spec)
 
 }

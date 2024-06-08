@@ -9,6 +9,7 @@ import (
 func TestPets(t *testing.T) {
 	cfg := &Config{
 		OpenAPIFile: "../testdata/examples/v3.0/petstore.yaml",
+		TypeMap:     DefaultTypeMap,
 	}
 	g := generator{cfg: cfg}
 	err := g.generate()
