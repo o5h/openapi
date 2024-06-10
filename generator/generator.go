@@ -119,6 +119,7 @@ func (g *generator) defineObject(name string, schema *spec.Schema) *TypeDef {
 	for _, prop := range schema.Properties {
 		field := Field{
 			Name:     toPascalCase(prop.Name),
+			JSONName: prop.Name,
 			Required: isRequired(schema, prop.Name),
 		}
 		field.Type = g.resolvePropertyType(&prop.Value)

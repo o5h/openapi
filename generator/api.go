@@ -11,6 +11,7 @@ const (
 
 type Field struct {
 	Name     string
+	JSONName string
 	Type     string
 	Required bool
 }
