@@ -10,11 +10,11 @@ import (
 )
 
 func TestPets(t *testing.T) {
-	tmpl := template.Must(template.New("api").Parse(goecho.DefaultTemplate))
+	apiTemplate := template.Must(template.New("api").Parse(goecho.DefaultTemplate))
 	cfg := &generator.Config{
 		OpenAPIFile: "../../testdata/examples/v3.0/petstore.yaml",
 		TypeMap:     goecho.DefaultTypeMap,
-		APITemplate: tmpl,
+		APITemplate: apiTemplate,
 	}
 	err := generator.Generate(cfg)
 	assert.Nil(t, err)

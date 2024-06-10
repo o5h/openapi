@@ -8,9 +8,16 @@ import (
 	"github.com/o5h/openapi/spec"
 )
 
-func Generate(cfg *Config) error {
+func Generate(cfg *Config) (err error) {
 	gen := generator{cfg: cfg}
-	return gen.generate()
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%v", r)
+		}
+	}()
+	gen.generate()
+
+	return nil
 }
 
 type generator struct {
@@ -21,23 +28,13 @@ type generator struct {
 	typeRefLinkage []func()
 }
 
-func (g *generator) generate() (err error) {
+func (g *generator) generate() {
 
 	g.types = make(map[string]*TypeDef)
 
-	if err = g.loadOpenAPI(); err != nil {
-		return
-	}
-
-	if err = g.generateAPI(); err != nil {
-		return
-	}
-
-	if err = g.applyTemplates(); err != nil {
-		return
-	}
-
-	return nil
+	must(g.loadOpenAPI())
+	must(g.generateAPI())
+	must(g.applyTemplates())
 }
 
 func (g *generator) loadOpenAPI() error {
@@ -173,4 +170,10 @@ func (g *generator) findFirstTag() string {
 		}
 	}
 	return ""
+}
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
