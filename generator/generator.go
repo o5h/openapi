@@ -12,13 +12,17 @@ import (
 var defaultTemplate string
 
 type generator struct {
-	openapi *spec.OpenAPI
-	cfg     *Config
-	api     *API
-	tmpl    *template.Template
+	openapi        *spec.OpenAPI
+	cfg            *Config
+	api            *API
+	tmpl           *template.Template
+	types          map[string]*TypeDef
+	typeRefLinkage []func()
 }
 
 func (g *generator) generate() (err error) {
+
+	g.types = make(map[string]*TypeDef)
 
 	if err = g.loadOpenAPI(); err != nil {
 		return
@@ -46,7 +50,13 @@ func (g *generator) generateAPI() (err error) {
 	g.definePackageName()
 	g.defineAPIName()
 	g.generateModel()
+	g.linkTypeRefs()
 	return
+}
+func (g *generator) linkTypeRefs() {
+	for _, link := range g.typeRefLinkage {
+		link()
+	}
 }
 
 func (g *generator) applyTemplate() (err error) {
@@ -98,9 +108,9 @@ func (g *generator) convertComponentsToTypeDefs() {
 	for _, schema := range g.openapi.Components.Schemas {
 		switch schema.Type {
 		case "object":
-			g.defineObject(schema.Name, &schema.Schema)
+			g.defineComponentObject(schema.Name, &schema.Schema)
 		case "array":
-			g.defineArray(schema.Name, &schema.Schema)
+			g.defineComponentArray(schema.Name, &schema.Schema)
 		default:
 			panic("Unsupported schema type " + schema.Type)
 		}
@@ -116,17 +126,23 @@ func isRequired(schema *spec.Schema, name string) bool {
 	return false
 }
 
-func (g *generator) defineObject(name string, schema *spec.Schema) {
-	typedef := TypeDef{Name: toPascalCase(name)}
+func (g *generator) defineObject(name string, schema *spec.Schema) *TypeDef {
+	def := &TypeDef{Name: toPascalCase(name)}
 	for _, prop := range schema.Properties {
 		field := Field{
 			Name:     toPascalCase(prop.Name),
-			Required: isRequired(schema, name),
+			Required: isRequired(schema, prop.Name),
 		}
 		field.Type = g.resolvePropertyType(&prop.Schema)
-		typedef.Fields = append(typedef.Fields, field)
+		def.Fields = append(def.Fields, field)
 	}
-	g.api.TypesDefs = append(g.api.TypesDefs, typedef)
+	return def
+}
+
+func (g *generator) defineComponentObject(name string, schema *spec.Schema) {
+	def := g.defineObject(name, schema)
+	g.types["#/components/schemas/"+name] = def
+	g.api.TypesDefs = append(g.api.TypesDefs, def)
 }
 
 func (g *generator) resolvePropertyType(schema *spec.Schema) string {
@@ -138,13 +154,19 @@ func (g *generator) resolvePropertyType(schema *spec.Schema) string {
 	return schema.Type
 }
 
-func (g *generator) defineArray(name string, schema *spec.Schema) {
-	def := TypeDef{
+func (g *generator) defineComponentArray(name string, schema *spec.Schema) {
+	def := &TypeDef{
 		Type: ArrayType,
 		Name: toPascalCase(name),
 	}
 	if schema.Items.Reference != nil {
-		//TODO: resolve item type ref
+		ref := schema.Items.Reference.Ref
+		g.typeRefLinkage = append(g.typeRefLinkage, func() {
+			def.ItemsType = g.types[ref] // resolve type later
+		})
+	} else {
+		//TODO
+		panic("not implemented yet")
 	}
 	g.api.TypesDefs = append(g.api.TypesDefs, def)
 }

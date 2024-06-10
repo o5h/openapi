@@ -16,6 +16,7 @@ type Field struct {
 }
 
 type TypeDef struct {
+	Ref       string
 	Type      Type
 	Name      string
 	ItemsType *TypeDef
@@ -25,7 +26,7 @@ type API struct {
 	Package   string
 	APIName   string
 	Endpoint  []*Endpoint
-	TypesDefs []TypeDef
+	TypesDefs []*TypeDef
 }
 
 type Endpoint struct {
