@@ -2,6 +2,8 @@ package generator
 
 import (
 	_ "embed"
+	"encoding/json"
+	"fmt"
 	"html/template"
 	"os"
 
@@ -79,6 +81,8 @@ func (g *generator) prepareTemplate() (err error) {
 }
 
 func (g *generator) executeTemplate() (err error) {
+	j, _ := json.Marshal(g.api)
+	fmt.Println(string(j))
 	err = g.tmpl.Execute(os.Stdout, g.api)
 	return
 }
@@ -106,13 +110,13 @@ func (g *generator) generateModel() {
 
 func (g *generator) convertComponentsToTypeDefs() {
 	for _, schema := range g.openapi.Components.Schemas {
-		switch schema.Type {
+		switch schema.Value.Type {
 		case "object":
-			g.defineComponentObject(schema.Name, &schema.Schema)
+			g.defineComponentObject(schema.Name, &schema.Value)
 		case "array":
-			g.defineComponentArray(schema.Name, &schema.Schema)
+			g.defineComponentArray(schema.Name, &schema.Value)
 		default:
-			panic("Unsupported schema type " + schema.Type)
+			panic("Unsupported schema type " + schema.Value.Type)
 		}
 	}
 }
@@ -127,13 +131,13 @@ func isRequired(schema *spec.Schema, name string) bool {
 }
 
 func (g *generator) defineObject(name string, schema *spec.Schema) *TypeDef {
-	def := &TypeDef{Name: toPascalCase(name)}
+	def := &TypeDef{Type: ObjectType, Name: toPascalCase(name)}
 	for _, prop := range schema.Properties {
 		field := Field{
 			Name:     toPascalCase(prop.Name),
 			Required: isRequired(schema, prop.Name),
 		}
-		field.Type = g.resolvePropertyType(&prop.Schema)
+		field.Type = g.resolvePropertyType(&prop.Value)
 		def.Fields = append(def.Fields, field)
 	}
 	return def
@@ -173,8 +177,8 @@ func (g *generator) defineComponentArray(name string, schema *spec.Schema) {
 
 func (g *generator) findFirstTag() string {
 	for _, path := range g.openapi.Paths {
-		for _, method := range path {
-			for _, tag := range method.Tags {
+		for _, method := range path.Value {
+			for _, tag := range method.Value.Tags {
 				if tag != "" {
 					return tag
 				}

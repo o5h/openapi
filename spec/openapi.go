@@ -7,8 +7,6 @@ import (
 )
 
 type Method string
-type In string
-type Type string
 
 const (
 	MethodGet     = Method("get")
@@ -20,11 +18,19 @@ const (
 	MethodConnect = Method("connect")
 	MethodOptions = Method("options")
 	MethodTrace   = Method("trace")
+)
 
-	TypeInteger = Type("integer")
-	TypeArray   = Type("array")
+type Type string
+
+const (
 	TypeString  = Type("string")
+	TypeArray   = Type("array")
+	TypeInteger = Type("integer")
+)
 
+type In string
+
+const (
 	InQuery  = In("query")
 	InHeader = In("header")
 	InPath   = In("path")
@@ -32,11 +38,11 @@ const (
 )
 
 type OpenAPI struct {
-	OpenAPI    string     `yaml:"openapi"`
-	Info       *Info      `yaml:"info"`
-	Servers    []Server   `yaml:"servers"`
-	Paths      Paths      `yaml:"paths"`
-	Components Components `yaml:"components"`
+	OpenAPI    string                                            `yaml:"openapi"`
+	Info       *Info                                             `yaml:"info"`
+	Servers    []Server                                          `yaml:"servers"`
+	Paths      NamedSlice[string, NamedSlice[Method, Operation]] `yaml:"paths"`
+	Components Components                                        `yaml:"components"`
 }
 
 type Server struct {
@@ -52,8 +58,8 @@ type ServerVariable struct {
 }
 
 type Components struct {
-	Schemas         NamedSchemas   `yaml:"schemas"`
-	SecuritySchemes map[string]any `yaml:"securitySchemes"`
+	Schemas         NamedSlice[string, Schema] `yaml:"schemas"`
+	SecuritySchemes map[string]any             `yaml:"securitySchemes"`
 }
 
 type Info struct {
@@ -66,8 +72,6 @@ type License struct {
 	Identifier string `yaml:"identifier,omitempty"`
 	URL        string `yaml:"url,omitempty"`
 }
-type Paths map[string]PathItem
-type PathItem map[string]*Operation
 
 type Operation struct {
 	Summary     string           `yaml:"summary,omitempty"`
@@ -116,34 +120,58 @@ type Content struct {
 }
 
 type Schema struct {
-	Type       string       `yaml:"type"`
-	Minimum    *int64       `yaml:"minimum,omitempty"`
-	Maximum    *int64       `yaml:"maximum,omitempty"`
-	MaxItems   *int64       `yaml:"maxItems,omitempty"`
-	Items      Ref[Schema]  `yaml:"items,omitempty"`
-	Format     string       `yaml:"format,omitempty"`
-	Required   []string     `yaml:"required,omitempty"`
-	Properties NamedSchemas `yaml:"properties"`
-	Example    any          `yaml:"example"`
+	Type       string                     `yaml:"type"`
+	Minimum    *int64                     `yaml:"minimum,omitempty"`
+	Maximum    *int64                     `yaml:"maximum,omitempty"`
+	MaxItems   *int64                     `yaml:"maxItems,omitempty"`
+	Items      Ref[Schema]                `yaml:"items,omitempty"`
+	Format     string                     `yaml:"format,omitempty"`
+	Required   []string                   `yaml:"required,omitempty"`
+	Properties NamedSlice[string, Schema] `yaml:"properties"`
+	Example    any                        `yaml:"example"`
 }
 
-type NamedSchema struct {
-	Schema
-	Name string
-}
-type NamedSchemas []NamedSchema
+// type NamedSchema struct {
+// 	Name string
+// 	Schema
+// }
 
-func (shema *NamedSchemas) UnmarshalYAML(node *yaml.Node) error {
+// type NamedSchemas []NamedSchema
+
+// func (shema *NamedSchemas) UnmarshalYAML(node *yaml.Node) error {
+// 	if node.Kind != yaml.MappingNode {
+// 		return fmt.Errorf("`commands` must contain YAML mapping, has %v", node.Kind)
+// 	}
+// 	*shema = make([]NamedSchema, len(node.Content)/2)
+// 	for i := 0; i < len(node.Content); i += 2 {
+// 		var res = &(*shema)[i/2]
+// 		if err := node.Content[i].Decode(&res.Name); err != nil {
+// 			return err
+// 		}
+// 		if err := node.Content[i+1].Decode(&res.Schema); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }
+
+type Named[K, T any] struct {
+	Name  K
+	Value T
+}
+type NamedSlice[K, T any] []Named[K, T]
+
+func (slice *NamedSlice[K, T]) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind != yaml.MappingNode {
 		return fmt.Errorf("`commands` must contain YAML mapping, has %v", node.Kind)
 	}
-	*shema = make([]NamedSchema, len(node.Content)/2)
+	*slice = make([]Named[K, T], len(node.Content)/2)
 	for i := 0; i < len(node.Content); i += 2 {
-		var res = &(*shema)[i/2]
-		if err := node.Content[i].Decode(&res.Name); err != nil {
+		var named = &(*slice)[i/2]
+		if err := node.Content[i].Decode(&named.Name); err != nil {
 			return err
 		}
-		if err := node.Content[i+1].Decode(&res.Schema); err != nil {
+		if err := node.Content[i+1].Decode(&named.Value); err != nil {
 			return err
 		}
 	}
