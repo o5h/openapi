@@ -1,23 +1,22 @@
 package generator
 
 import (
-	_ "embed"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"os"
 
 	"github.com/o5h/openapi/spec"
 )
 
-//go:embed default.tmpl
-var defaultTemplate string
+func Generate(cfg *Config) error {
+	gen := generator{cfg: cfg}
+	return gen.generate()
+}
 
 type generator struct {
 	openapi        *spec.OpenAPI
 	cfg            *Config
 	api            *API
-	tmpl           *template.Template
 	types          map[string]*TypeDef
 	typeRefLinkage []func()
 }
@@ -34,7 +33,7 @@ func (g *generator) generate() (err error) {
 		return
 	}
 
-	if err = g.applyTemplate(); err != nil {
+	if err = g.applyTemplates(); err != nil {
 		return
 	}
 
@@ -61,29 +60,17 @@ func (g *generator) linkTypeRefs() {
 	}
 }
 
-func (g *generator) applyTemplate() (err error) {
-	if err = g.prepareTemplate(); err != nil {
-		return
-	}
-	if err = g.executeTemplate(); err != nil {
+func (g *generator) applyTemplates() (err error) {
+	if err = g.applyAPITemplate(); err != nil {
 		return
 	}
 	return
 }
 
-func (g *generator) prepareTemplate() (err error) {
-	tmpl := defaultTemplate
-	if g.cfg.TemplateFile != "" {
-		tmpl = ""
-	}
-	g.tmpl, err = template.New("api").Parse(tmpl)
-	return
-}
-
-func (g *generator) executeTemplate() (err error) {
+func (g *generator) applyAPITemplate() (err error) {
 	j, _ := json.Marshal(g.api)
 	fmt.Println(string(j))
-	err = g.tmpl.Execute(os.Stdout, g.api)
+	err = g.cfg.APITemplate.Execute(os.Stdout, g.api)
 	return
 }
 

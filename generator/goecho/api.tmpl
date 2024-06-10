@@ -3,17 +3,16 @@ package {{.Package}}
 type {{.APIName}} interface {
 }
 
-{{- range $typeDef := .TypesDefs}}
+{{- range $typeDef := .TypesDefs }}
 
 {{ if eq $typeDef.Type "object" }}
 type {{$typeDef.Name}} struct {
-
-{{- range $field := .Fields}}
+{{- range $field := .Fields }}
     {{$field.Name}} {{$field.Type}}
 {{- end }}
 }
-{{ else if eq $typeDef.Type "array" }}
-    type {{$typeDef.Name}} []{{$typeDef.ItemsType.Name}}
+{{- else if eq $typeDef.Type "array" }}
+type {{$typeDef.Name}} []{{$typeDef.ItemsType.Name}}
 {{end}}
 
 
