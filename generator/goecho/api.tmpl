@@ -1,6 +1,9 @@
 package {{.Package}}
 
 type {{.APIName}} interface {
+{{ range $endpoint := .Endpoints }}
+    {{$endpoint.Operation}}()
+{{ end }}
 }
 
 {{- range $typeDef := .TypesDefs }}
@@ -15,5 +18,4 @@ type {{$typeDef.Name}} struct {
 type {{$typeDef.Name}} []{{$typeDef.ItemsType.Name}}
 {{end}}
 
-
-{{- end }}
+{{ end }}

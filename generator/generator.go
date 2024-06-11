@@ -47,6 +47,7 @@ func (g *generator) generateAPI() (err error) {
 	g.api = &API{}
 	g.definePackageName()
 	g.defineAPIName()
+	g.generateEndpoints()
 	g.generateModel()
 	g.linkTypeRefs()
 	return
@@ -86,6 +87,23 @@ func (g *generator) definePackageName() {
 
 func (g *generator) defineAPIName() {
 	g.api.APIName = toPascalCase(g.api.Package)
+}
+
+func (g *generator) generateEndpoints() {
+	for _, path := range g.openapi.Paths {
+		url := path.Name
+		for _, method := range path.Value {
+			methodName := method.Name
+			operation := method.Value
+			pascalName := toPascalCase(operation.OperationId)
+			endpoint := &Endpoint{
+				Method:    methodName,
+				Path:      url,
+				Operation: pascalName,
+			}
+			g.api.Endpoints = append(g.api.Endpoints, endpoint)
+		}
+	}
 }
 
 func (g *generator) generateModel() {

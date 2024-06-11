@@ -131,34 +131,11 @@ type Schema struct {
 	Example    any                        `yaml:"example"`
 }
 
-// type NamedSchema struct {
-// 	Name string
-// 	Schema
-// }
-
-// type NamedSchemas []NamedSchema
-
-// func (shema *NamedSchemas) UnmarshalYAML(node *yaml.Node) error {
-// 	if node.Kind != yaml.MappingNode {
-// 		return fmt.Errorf("`commands` must contain YAML mapping, has %v", node.Kind)
-// 	}
-// 	*shema = make([]NamedSchema, len(node.Content)/2)
-// 	for i := 0; i < len(node.Content); i += 2 {
-// 		var res = &(*shema)[i/2]
-// 		if err := node.Content[i].Decode(&res.Name); err != nil {
-// 			return err
-// 		}
-// 		if err := node.Content[i+1].Decode(&res.Schema); err != nil {
-// 			return err
-// 		}
-// 	}
-// 	return nil
-// }
-
 type Named[K, T any] struct {
 	Name  K
 	Value T
 }
+
 type NamedSlice[K, T any] []Named[K, T]
 
 func (slice *NamedSlice[K, T]) UnmarshalYAML(node *yaml.Node) error {

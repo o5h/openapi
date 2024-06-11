@@ -26,7 +26,7 @@ type TypeDef struct {
 type API struct {
 	Package   string
 	APIName   string
-	Endpoint  []*Endpoint
+	Endpoints []*Endpoint
 	TypesDefs []*TypeDef
 }
 
